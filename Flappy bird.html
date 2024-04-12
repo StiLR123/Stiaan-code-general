@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Bird</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <script>
+     // Get the canvas element and context
+     const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+
+    const bird = {
+        x: 50,
+        y: canvas.height / 2,
+        radius: 10,
+        velocity: 0,
+        gravity: 0.5,
+        jump: -8,
+        draw: function () {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = "red";
+            ctx.fill();
+            ctx.closePath();
+        },
+        flap: function () {
+            this.velocity = this.jump;
+        },
+        update: function () {
+            this.velocity += this.gravity;
+            this.y += this.velocity;
+        }
+    };
+
+    // Pipe object
+    const pipe = {
+        position: [],
+        gap: 100,
+        width: 50,
+        draw: function () {
+            for (let i = 0; i < this.position.length; i++) {
+                const p = this.position[i];
+                ctx.fillStyle = "green";
+                ctx.fillRect(p.x, 0, this.width, p.top);
+                ctx.fillRect(p.x, p.bottom, this.width, canvas.height - p.bottom);
+            }
+        },
+        update: function () {
+            if (frame % 100 === 0) {
+                const minHeight = 50;
+                const maxHeight = canvas.height - this.gap - 50;
+                const height = Math.floor(Math.random() * (maxHeight - minHeight + 1) + minHeight);
+                this.position.push({
+                    x: canvas.width,
+                    top: height,
+                    bottom: height + this.gap
+                });
+            }
+            for (let i = 0; i < this.position.length; i++) {
+                const p = this.position[i];
+                p.x -= 2;
+                if (p.x + this.width <= 0) {
+                    this.position.shift();
+                }
+            }
+        }
+    };
+
+    let gameover = false;
+    let score = 0;
+    let frame = 0;
+
+    // Main game loop
+    function gameLoop() {
+        if (!gameover) {
+            frame++;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            bird.update();
+            bird.draw();
+
+            pipe.update();
+            pipe.draw();
+
+            // Collision detection
+            for (let i = 0; i < pipe.position.length; i++) {
+                const p = pipe.position[i];
+                const bottomPipeY = p.bottom;
+                const topPipeY = p.top;
+                const pipeX = p.x;
+                const birdTopY = bird.y - bird.radius;
+                const birdBottomY = bird.y + bird.radius;
+                const birdRightX = bird.x + bird.radius;
+                const birdLeftX = bird.x - bird.radius;
+
+                if (birdRightX > pipeX && birdLeftX < pipeX + pipe.width) {
+                    if (birdTopY < topPipeY || birdBottomY > bottomPipeY) {
+                        gameOver();
+                    }
+                }
+
+                if (bird.x === pipeX + pipe.width) {
+                    score++;
+                }
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+    }
+
+    function gameOver() {
+        gameover = true;
+        alert("Game Over! Your score: " + score);
+        reset();
+    }
+
+    function reset() {
+        gameover = false;
+        score = 0;
+        bird.y = canvas.height / 2;
+        pipe.position = [];
+        frame = 0;
+    }
+
+    // Event listeners
+    document.addEventListener("keydown", function (event) {
+        if (event.keyCode === 32) {
+            bird.flap();
+        }
+    });
+
+    // Start the game loop
+    gameLoop();
+    </script>
+</body>
+</html>
