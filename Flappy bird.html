@@ -1,147 +1,126 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flappy Bird</title>
-    <style>
-        canvas {
-            border: 1px solid black;
-            display: block;
-            margin: 0 auto;
-        }
-    </style>
+// skibidi flappy bird
+        <html>
+    <head>
+<title>Flappy Bird</title>
+<style>
+canvas {
+border:5px dashed hotpink;
+background: lightblue;
+display:block;
+margin:20px auto;
+}
+body {
+background:black;
+color:lime;
+font-family:Comic Sans MS, cursive;
+text-align:center;
+}
+</style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="400" height="400"></canvas>
-    <script>
-     // Get the canvas element and context
-     const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
+<h1>Flappy Bird!!</h1>
+<canvas id="gameCanvas" width="400" height="400"></canvas>
+<p>Press SPACE to flap!</p>
+<script>
+const canvas=document.getElementById("gameCanvas");
+const ctx=canvas.getContext("2d");
 
+let bird={
+x:50,y:200,r:12,velocity:0,gravity:0.6,jump:-9,
+draw:function(){
+ctx.fillStyle="yellow";
+ctx.beginPath();
+ctx.arc(this.x,this.y,this.r,0,Math.PI*2); // body
+ctx.fill();
+ctx.closePath();
 
-    const bird = {
-        x: 50,
-        y: canvas.height / 2,
-        radius: 10,
-        velocity: 0,
-        gravity: 0.5,
-        jump: -8,
-        draw: function () {
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-            ctx.fillStyle = "red";
-            ctx.fill();
-            ctx.closePath();
-        },
-        flap: function () {
-            this.velocity = this.jump;
-        },
-        update: function () {
-            this.velocity += this.gravity;
-            this.y += this.velocity;
-        }
-    };
+// eye
+ctx.fillStyle="white";
+ctx.beginPath();
+ctx.arc(this.x+5,this.y-5,4,0,Math.PI*2);
+ctx.fill();
+ctx.fillStyle="black";
+ctx.beginPath();
+ctx.arc(this.x+5,this.y-5,2,0,Math.PI*2);
+ctx.fill();
 
-    // Pipe object
-    const pipe = {
-        position: [],
-        gap: 100,
-        width: 50,
-        draw: function () {
-            for (let i = 0; i < this.position.length; i++) {
-                const p = this.position[i];
-                ctx.fillStyle = "green";
-                ctx.fillRect(p.x, 0, this.width, p.top);
-                ctx.fillRect(p.x, p.bottom, this.width, canvas.height - p.bottom);
-            }
-        },
-        update: function () {
-            if (frame % 100 === 0) {
-                const minHeight = 50;
-                const maxHeight = canvas.height - this.gap - 50;
-                const height = Math.floor(Math.random() * (maxHeight - minHeight + 1) + minHeight);
-                this.position.push({
-                    x: canvas.width,
-                    top: height,
-                    bottom: height + this.gap
-                });
-            }
-            for (let i = 0; i < this.position.length; i++) {
-                const p = this.position[i];
-                p.x -= 2;
-                if (p.x + this.width <= 0) {
-                    this.position.shift();
-                }
-            }
-        }
-    };
+// beak
+ctx.fillStyle="orange";
+ctx.beginPath();
+ctx.moveTo(this.x+this.r,this.y);
+ctx.lineTo(this.x+this.r+8,this.y-4);
+ctx.lineTo(this.x+this.r+8,this.y+4);
+ctx.closePath();
+ctx.fill();
 
-    let gameover = false;
-    let score = 0;
-    let frame = 0;
+// wing
+ctx.fillStyle="gold";
+ctx.beginPath();
+ctx.arc(this.x-5,this.y+2,6,Math.PI/2,Math.PI*1.5);
+ctx.fill();
+},
+flap:function(){this.velocity=this.jump;},
+update:function(){this.velocity+=this.gravity;this.y+=this.velocity;}
+};
 
-    // Main game loop
-    function gameLoop() {
-        if (!gameover) {
-            frame++;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+let pipe={
+position:[],gap:120,width:60,
+draw:function(){
+ctx.fillStyle="green";
+for(let p of this.position){
+ctx.fillRect(p.x,0,this.width,p.top);
+ctx.fillRect(p.x,p.bottom,this.width,canvas.height-p.bottom);
+}
+},
+update:function(){
+if(frame%90===0){
+let h=Math.floor(Math.random()*200)+50;
+this.position.push({x:canvas.width,top:h,bottom:h+this.gap});
+}
+this.position=this.position.filter(p=>p.x+this.width>0);
+for(let p of this.position){p.x-=3;}
+}
+};
 
-            bird.update();
-            bird.draw();
+let score=0,frame=0,gameover=false;
 
-            pipe.update();
-            pipe.draw();
+function loop(){
+if(gameover)return;
+frame++;
+ctx.clearRect(0,0,canvas.width,canvas.height);
 
-            // Collision detection
-            for (let i = 0; i < pipe.position.length; i++) {
-                const p = pipe.position[i];
-                const bottomPipeY = p.bottom;
-                const topPipeY = p.top;
-                const pipeX = p.x;
-                const birdTopY = bird.y - bird.radius;
-                const birdBottomY = bird.y + bird.radius;
-                const birdRightX = bird.x + bird.radius;
-                const birdLeftX = bird.x - bird.radius;
+bird.update();bird.draw();
+pipe.update();pipe.draw();
 
-                if (birdRightX > pipeX && birdLeftX < pipeX + pipe.width) {
-                    if (birdTopY < topPipeY || birdBottomY > bottomPipeY) {
-                        gameOver();
-                    }
-                }
+for(let p of pipe.position){
+if(bird.x+bird.r>p.x&&bird.x-bird.r<p.x+pipe.width){
+if(bird.y-bird.r<p.top||bird.y+bird.r>p.bottom){end();}
+}
+if(bird.x===p.x+pipe.width){score++;}
+}
 
-                if (bird.x === pipeX + pipe.width) {
-                    score++;
-                }
-            }
+ctx.fillStyle="white";
+ctx.font="20px Comic Sans MS";
+ctx.fillText("Score: "+score,10,30);
 
-            requestAnimationFrame(gameLoop);
-        }
-    }
+requestAnimationFrame(loop);
+}
 
-    function gameOver() {
-        gameover = true;
-        alert("Game Over! Your score: " + score);
-        reset();
-    }
+function end(){
+gameover=true;
+alert("You Died :( Score: "+score);
+reset();
+}
 
-    function reset() {
-        gameover = false;
-        score = 0;
-        bird.y = canvas.height / 2;
-        pipe.position = [];
-        frame = 0;
-    }
+function reset(){
+score=0;frame=0;bird.y=200;bird.velocity=0;
+pipe.position=[];gameover=false;
+loop();
+}
 
-    // Event listeners
-    document.addEventListener("keydown", function (event) {
-        if (event.keyCode === 32) {
-            bird.flap();
-        }
-    });
-
-    // Start the game loop
-    gameLoop();
-    </script>
-</body>
-</html>
+document.addEventListener("keydown",e=>{if(e.code==="Space")bird.flap();});
+loop();
+</script>
+    </body>
+        </html>
